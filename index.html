@@ -174,6 +174,71 @@
       const [copied, setCopied] = useState(false);
       const [screen, setScreen] = useState("input");
 
+      const downloadMonthAsImage = (year, month) => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 800;
+        canvas.height = 1000;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = "bold 32px 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif";
+        ctx.fillStyle = "#1E40AF";
+        ctx.textAlign = "left";
+        ctx.fillText(`${year}年 ${month + 1}月`, 40, 60);
+        if (userName) {
+          ctx.font = "18px 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif";
+          ctx.fillText(`${userName}様`, 40, 90);
+        }
+        const { firstDay, totalDays } = getMonthDays(year, month);
+        const cellSize = 100;
+        const gap = 4;
+        const startX = 40;
+        const startY = 140;
+        ctx.font = "bold 14px 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        WEEKDAYS.forEach((w, i) => {
+          const x = startX + i * (cellSize + gap) + cellSize / 2;
+          const y = startY - 30;
+          ctx.fillStyle = i === 0 ? "#EF4444" : i === 6 ? "#3B82F6" : "#64748B";
+          ctx.fillText(w, x, y);
+        });
+        for (let day = 1; day <= totalDays; day++) {
+          const weekIdx = (firstDay + day - 1) % 7;
+          const row = Math.floor((firstDay + day - 1) / 7);
+          const x = startX + weekIdx * (cellSize + gap);
+          const y = startY + row * (cellSize + gap);
+          const key = formatDateKey(year, month, day);
+          const svc = schedule[key];
+          const dispSvc = svc ? SERVICES[svc] : null;
+          ctx.fillStyle = dispSvc ? dispSvc.bg : "#F8FAFC";
+          ctx.fillRect(x, y, cellSize, cellSize);
+          ctx.strokeStyle = dispSvc ? dispSvc.color : "#E2E8F0";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x, y, cellSize, cellSize);
+          ctx.font = "bold 20px 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif";
+          ctx.fillStyle = weekIdx === 0 ? "#EF4444" : weekIdx === 6 ? "#3B82F6" : "#334155";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(day, x + cellSize / 2, y + cellSize / 2 - 10);
+          if (dispSvc) {
+            ctx.font = "bold 12px 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif";
+            ctx.fillStyle = dispSvc.color;
+            ctx.fillText(dispSvc.label, x + cellSize / 2, y + cellSize / 2 + 20);
+          }
+        }
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `care-calendar-${year}-${String(month + 1).padStart(2, "0")}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, "image/png");
+      };
+
       const months = [0, 1, 2].map((i) => {
         const m = (startMonth + i) % 12;
         const y = startYear + Math.floor((startMonth + i) / 12);
@@ -317,9 +382,7 @@
               <div style={{ background: "#EFF6FF", borderRadius: 12, padding: "10px 14px", marginBottom: 16, border: "1.5px solid #BFDBFE" }}>
                 <div style={{ fontSize: 12, color: "#1E40AF", fontWeight: 700, marginBottom: 4 }}>📖 操作方法</div>
                 <div style={{ fontSize: 12, color: "#3B82F6", lineHeight: 1.8 }}>
-                  • 日付をタップ → サービス・終了日・備考を入力<br />
-                  • 終了日を選ぶとカレンダーがリアルタイムで色づきます<br />
-                  • 登録済みの日をタップ → 種別切替（ショート→デイ→クリア）
+                  • 日付をタップ → サービス・終了日・備考を入力
                 </div>
               </div>
 
@@ -333,7 +396,13 @@
 
                 return (
                   <div key={monthKey} style={{ background: "white", borderRadius: 16, padding: 16, marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: "#1E40AF", marginBottom: 12 }}>{year}年 {month + 1}月</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#1E40AF" }}>{year}年 {month + 1}月</div>
+                      <button onClick={() => downloadMonthAsImage(year, month)} style={{
+                        padding: "8px 12px", borderRadius: 8, border: "none",
+                        background: "#10B981", color: "white", fontWeight: 700, fontSize: 12, cursor: "pointer"
+                      }}>🖼️ 画像で保存</button>
+                    </div>
 
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 4 }}>
                       {WEEKDAYS.map((w, i) => (
