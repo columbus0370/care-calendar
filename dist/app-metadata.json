@@ -1,0 +1,11 @@
+{
+  "name": "介護サービス希望カレンダー",
+  "version": "1.0.0",
+  "description": "ケアマネさんへの予定共有ツール",
+  "package": "com.carecare.calendar",
+  "permissions": [
+    "android.permission.INTERNET"
+  ],
+  "minSdk": 21,
+  "targetSdk": 34
+}

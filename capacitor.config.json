@@ -1,0 +1,8 @@
+{
+  "appId": "com.carecare.calendar",
+  "appName": "care-calendar",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
